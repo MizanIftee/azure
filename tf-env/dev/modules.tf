@@ -104,8 +104,8 @@ module "app-service" {
   resourcegroup       = module.rg
   admin_username      = var.admin_username
   admin_password      = var.admin_password
-  appservicename      = "${var.enviroment}-${var.project}"-count.index
-  appserviceplanname  ="${var.enviroment}-${var.project}-plan"-count.index
+  appservicename      = "${lower(local.app_services[count.index].kind)}-appservice"
+  appserviceplanname  = "${lower(local.app_services[count.index].kind)}-appservice-plan"
   sql_db_name         = var.sql_db_name
   tier                = local.app_services[count.index].sku.tier
   size                = local.app_services[count.index].sku.size
