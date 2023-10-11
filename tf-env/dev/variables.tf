@@ -16,3 +16,5 @@ variable "server_name" {}
 variable "admin_username" {}
 variable "admin_password" {}
 variable "domain_name" {}
+variable "appservice_count" {}
+variable "sql_db_name" {}

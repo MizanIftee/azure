@@ -98,19 +98,22 @@ module "key-vault" {
 }
 
 module "app-service" {
+  count = var.appservice_count
   source              = "../../modules/appservice"
   domain_name         = module.mssqlserver.domain_name
   resourcegroup       = module.rg
   admin_username      = var.admin_username
   admin_password      = var.admin_password
-  
+  appservicename      = "${var.enviroment}-${var.project}"-count.index
+  appserviceplanname  ="${var.enviroment}-${var.project}-plan"-count.index
+  sql_db_name         = var.sql_db_name
 }
 
 module "mssqlserver" {
   source              = "../../modules/mssql"
   resourcegroup       = module.rg
   sql_server_name     = "${var.enviroment}-${var.project}-msssql"
-  sql_db_name         = "testdb"
+  sql_db_name         = var.sql_db_name
   admin_username      = var.admin_username
   admin_password      = var.admin_password
 }

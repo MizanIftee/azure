@@ -24,5 +24,8 @@ tags = {
 #MSSQL
 admin_username = "mizadmin"
 admin_password = "MYVunXNw5cJuc8AH" #need to fetch from azure KV
+sql_db_name    = "testdb"
+#Appservice
+appservice_count=1
 
 

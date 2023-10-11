@@ -4,3 +4,7 @@ variable "resourcegroup" {
 variable "domain_name" {}
 variable "admin_username" {}
 variable "admin_password" {}
+variable "appservicename" {}
+variable "appserviceplanname" {}
+variable "sql_db_name" {}
+

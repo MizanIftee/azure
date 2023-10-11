@@ -1,5 +1,5 @@
 resource "azurerm_app_service_plan" "tfrg" {
-  name                = "${var.prefix}-svcplan"
+  name                = var.appserviceplanname
   location            = var.resourcegroup.location
   resource_group_name = var.resourcegroup.name
 
@@ -10,7 +10,7 @@ resource "azurerm_app_service_plan" "tfrg" {
 }
 
 resource "azurerm_app_service" "tfrg" {
-  name                = "${var.prefix}api"
+  name                = var.appservicename
   location            = var.resourcegroup.location
   resource_group_name = var.resourcegroup.name
   app_service_plan_id = azurerm_app_service_plan.tfrg.id
@@ -22,7 +22,7 @@ resource "azurerm_app_service" "tfrg" {
   }
 
   app_settings = {
-    EVENTS_SQLCONN = "Server=tcp:${var.domain_name},1433;Initial Catalog=${azurerm_sql_database.tfrg.name};Persist Security Info=False;User ID=${var.admin_username};Password=${var.admin_password};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+    EVENTS_SQLCONN = "Server=tcp:${var.domain_name},1433;Initial Catalog=${var.sql_db_name};Persist Security Info=False;User ID=${var.admin_username};Password=${var.admin_password};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
   }
 
 }
