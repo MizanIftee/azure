@@ -109,6 +109,8 @@ module "app-service" {
   sql_db_name         = var.sql_db_name
   tier                = local.app_services[count.index].sku.tier
   size                = local.app_services[count.index].sku.size
+  kind                = local.app_services[count.index].kind
+  depends_on          = [module.rg, module.mssqlserver]
 }
 
 module "mssqlserver" {
@@ -118,4 +120,5 @@ module "mssqlserver" {
   sql_db_name         = var.sql_db_name
   admin_username      = var.admin_username
   admin_password      = var.admin_password
+  depends_on = [module.rg, module.virtual-network]
 }

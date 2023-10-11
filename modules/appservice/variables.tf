@@ -9,4 +9,5 @@ variable "appserviceplanname" {}
 variable "sql_db_name" {}
 variable "tier" {}
 variable "size" {}
+variable "kind" {}
 
