@@ -98,7 +98,7 @@ module "key-vault" {
 }
 
 module "app-service" {
-  count = var.appservice_count
+  count               = length(local.app_services)
   source              = "../../modules/appservice"
   domain_name         = module.mssqlserver.domain_name
   resourcegroup       = module.rg
@@ -107,6 +107,8 @@ module "app-service" {
   appservicename      = "${var.enviroment}-${var.project}"-count.index
   appserviceplanname  ="${var.enviroment}-${var.project}-plan"-count.index
   sql_db_name         = var.sql_db_name
+  tier                = local.app_services[count.index].sku.tier
+  size                = local.app_services[count.index].sku.size
 }
 
 module "mssqlserver" {

@@ -7,4 +7,6 @@ variable "admin_password" {}
 variable "appservicename" {}
 variable "appserviceplanname" {}
 variable "sql_db_name" {}
+variable "tier" {}
+variable "size" {}
 

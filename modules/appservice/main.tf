@@ -4,8 +4,8 @@ resource "azurerm_app_service_plan" "tfrg" {
   resource_group_name = var.resourcegroup.name
 
   sku {
-    tier = "Standard"
-    size = "S1"
+    tier = var.tier
+    size = var.size
   }
 }
 
