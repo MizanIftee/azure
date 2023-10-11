@@ -1,0 +1,136 @@
+# Triggers only for follwing conditions
+# Update the paths according to the respective projects
+trigger: none
+pr: none
+
+
+# Variables
+variables:
+- group: miz-dev-app-secrets
+- name: TF_VERSION
+  value: '1.0.3'
+- name: TFLINT_VERSION
+  value: '0.30.0'
+
+parameters:
+- name: Environment
+  type: string
+  values:
+  - dev
+
+# Image to use for the pipeline stages and jobs
+pool:
+  vmImage: ubuntu-latest
+
+stages :
+
+- stage: Validate_Configuration_File
+  jobs:
+  - job: TFLint
+    displayName: "Terraform Lint & Security Scan"
+    continueOnError: false
+
+    steps:
+    - script: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install setuptools
+        python3 -m pip install lastversion
+        wget https://github.com/wata727/tflint/releases/download/v$TFLINT_VERSION/tflint_linux_amd64.zip
+        unzip tflint_linux_amd64.zip
+        chmod +x tflint
+        ./tflint --version
+        ./tflint
+      displayName: "Lint Installation and Initiation"
+    - task: DockerInstaller@0
+      displayName: 'Install Docker 20.10.6'
+      inputs:
+        dockerVersion: 20.10.6
+  
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+      displayName: "Terraform Install"
+      inputs:
+        terraformVersion: "$(TF_VERSION)"
+    - script: |
+        terraform version
+      displayName: "Terraform Version"
+
+    - script: |
+        terraform init
+        terraform validate
+      workingDirectory: 'tf-env/${{ parameters.Environment }}'
+      displayName: 'Terraform Init'
+      env:
+        ARM_SUBSCRIPTION_ID: $(miz-subscription-id)
+        ARM_CLIENT_ID: $(miz-sp-app-id)
+        ARM_CLIENT_SECRET: $(miz-sp-pass)
+        ARM_TENANT_ID: $(miz-aad-tenant)
+
+    - script: |
+        export TF_VAR_cilastjobrun='$(Build.BuildId)'
+        export TF_VAR_cilastrun=$(date +"%Y%m%d-%H%M%S")
+        terraform plan -input=false -var-file=${{ parameters.Environment }}.tfvars -out tfplan
+        terraform show -no-color tfplan > tfplan.out
+      workingDirectory: 'tf-env/${{ parameters.Environment }}'
+      displayName: 'Terraform Plan'
+      env:
+        ARM_SUBSCRIPTION_ID: $(miz-subscription-id)
+        ARM_CLIENT_ID: $(miz-sp-app-id)
+        ARM_CLIENT_SECRET: $(miz-sp-pass)
+        ARM_TENANT_ID: $(miz-aad-tenant)
+
+    - script: |
+        cd tf-env/${{ parameters.Environment }}
+        tar -cvf tfplan1.tar tfplan.out
+        tar -cvf tfplanraw1.tar tfplan
+      displayName: "Prepare Plan & Raw Output as TAR to Publish"
+    - publish: '$(Build.Repository.LocalPath)/tf-env/${{ parameters.Environment }}/tfplan1.tar'
+      artifact: 'tfplan1'
+      displayName: "Publish TF Plan Plain Text"
+    - publish: '$(Build.Repository.LocalPath)/tf-env/${{ parameters.Environment }}/tfplanraw1.tar'
+      artifact: 'tfplanraw1'
+      displayName: "Publish TF Plan Raw File"
+
+- stage: Terraform_Apply
+  jobs:
+  - job: Apply
+    displayName: "Terraform Apply"
+    continueOnError: false
+    
+    steps:
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+      displayName: "Terraform Install"
+      inputs:
+        terraformVersion: "$(TF_VERSION)"
+    - script: |
+        terraform version
+      displayName: "Terraform Version"
+    - download: current
+      artifact: 'tfplanraw1'
+      displayName: "Download the tfplan raw format"
+    - script: |
+        cd ../tfplanraw1
+        tar -xvf tfplanraw1.tar
+        mkdir -p "$(Build.Repository.LocalPath)"
+        mv tfplan $(Build.Repository.LocalPath)/tf-env/${{ parameters.Environment }}/
+      displayName: "Unzip the TF Plan Raw"
+
+    - script: |
+        terraform init -reconfigure -force-copy -upgrade
+      workingDirectory: 'tf-env/${{ parameters.Environment }}'
+      displayName: 'Terraform Init'
+      env:
+        ARM_SUBSCRIPTION_ID: $(miz-subscription-id)
+        ARM_CLIENT_ID: $(miz-sp-app-id)
+        ARM_CLIENT_SECRET: $(miz-sp-pass)
+        ARM_TENANT_ID: $(miz-aad-tenant)
+
+
+    - script: |
+        terraform apply -no-color -input=false -auto-approve tfplan
+      workingDirectory: 'tf-env/${{ parameters.Environment }}'
+      displayName: 'Terraform Apply'
+      env:
+        ARM_SUBSCRIPTION_ID: $(miz-subscription-id)
+        ARM_CLIENT_ID: $(miz-sp-app-id)
+        ARM_CLIENT_SECRET: $(miz-sp-pass)
+        ARM_TENANT_ID: $(miz-aad-tenant)
