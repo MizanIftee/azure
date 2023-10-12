@@ -1,21 +1,21 @@
 locals {
-  backend_probe_name = "${azurerm_virtual_network.example.name}-probe"
-  http_setting_name  = "${azurerm_virtual_network.example.name}-be-htst"
-  public_ip_name     = "${azurerm_virtual_network.example.name}-pip"
+  backend_probe_name = "${var.vnet_name}-probe"
+  http_setting_name  = "${var.vnet_name}-be-htst"
+  public_ip_name     = "${var.vnet_name}-pip"
 }
 
 resource "azurerm_public_ip" "example" {
   name                = local.public_ip_name
-  resource_group_name = azurerm_resource_group.example.name
-  location            = azurerm_resource_group.example.location
+  resource_group_name = var.resourcegroup.name
+  location            = var.resourcegroup.location
   allocation_method   = "Dynamic"
 }
 
 resource "azurerm_application_gateway" "network" {
   depends_on          = [azurerm_public_ip.example]
   name                = "example-appgateway"
-  resource_group_name = azurerm_resource_group.example.name
-  location            = azurerm_resource_group.example.location
+  resource_group_name = var.resourcegroup.name
+  location            = var.resourcegroup.location
 
   sku {
     name     = "Standard_Small"
@@ -25,26 +25,26 @@ resource "azurerm_application_gateway" "network" {
 
   gateway_ip_configuration {
     name      = "my-gateway-ip-configuration"
-    subnet_id = azurerm_subnet.example.0.id
+    subnet_id = var.subnet_id.[0].value
   }
 
   dynamic "frontend_port" {
-    for_each = azurerm_app_service.example
+    for_each = appservice_host
     content {
-      name = "${azurerm_virtual_network.example.name}-${frontend_port.value.name}-feport"
+      name = "${var.vnet_name}-${frontend_port.value.name}-feport"
       port = "808${frontend_port.key}"
     }
   }
 
   frontend_ip_configuration {
-    name                 = "${azurerm_virtual_network.example.name}-feip"
+    name                 = "${var.vnet_name}-feip"
     public_ip_address_id = azurerm_public_ip.example.id
   }
 
   dynamic "backend_address_pool" {
-    for_each = azurerm_app_service.example
+    for_each = appservice_host
     content {
-      name  = "${azurerm_virtual_network.example.name}-${backend_address_pool.value.name}-beap"
+      name  = "${var.vnet_name}-${backend_address_pool.value.name}-beap"
       fqdns = [backend_address_pool.value.default_site_hostname]
     }
   }
@@ -75,22 +75,22 @@ resource "azurerm_application_gateway" "network" {
   }
 
   dynamic "http_listener" {
-    for_each = azurerm_app_service.example
+    for_each = appservice_host
     content {
-      name                           = "${azurerm_virtual_network.example.name}-${http_listener.value.name}-httplstn"
-      frontend_ip_configuration_name = "${azurerm_virtual_network.example.name}-feip"
-      frontend_port_name             = "${azurerm_virtual_network.example.name}-${http_listener.value.name}-feport"
+      name                           = "${var.vnet_name}-${http_listener.value.name}-httplstn"
+      frontend_ip_configuration_name = "${var.vnet_name}-feip"
+      frontend_port_name             = "${var.vnet_name}-${http_listener.value.name}-feport"
       protocol                       = "Http"
     }
   }
 
   dynamic "request_routing_rule" {
-    for_each = azurerm_app_service.example
+    for_each = appservice_host
     content {
-      name                       = "${azurerm_virtual_network.example.name}-${request_routing_rule.value.name}-rqrt"
+      name                       = "${var.vnet_name}-${request_routing_rule.value.name}-rqrt"
       rule_type                  = "Basic"
-      http_listener_name         = "${azurerm_virtual_network.example.name}-${request_routing_rule.value.name}-httplstn"
-      backend_address_pool_name  = "${azurerm_virtual_network.example.name}-${request_routing_rule.value.name}-beap"
+      http_listener_name         = "${var.vnet_name}-${request_routing_rule.value.name}-httplstn"
+      backend_address_pool_name  = "${var.vnet_name}-${request_routing_rule.value.name}-beap"
       backend_http_settings_name = local.http_setting_name
     }
   }

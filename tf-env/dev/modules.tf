@@ -120,5 +120,13 @@ module "mssqlserver" {
   sql_db_name         = var.sql_db_name
   admin_username      = var.admin_username
   admin_password      = var.admin_password
-  depends_on = [module.rg, module.virtual-network]
+  depends_on          = [module.rg, module.virtual-network]
+}
+
+module "appgateway" {
+  source = "../../modules/appgateway"
+  vnet_name         = "${var.enviroment}-${var.project}-vnet"
+  resource_group    = module.rg
+  subnet_id         = module.virtual-network.vnet_subnets
+  appservice_host   = module.app-service.site_hostname
 }
