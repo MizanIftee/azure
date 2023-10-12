@@ -1,7 +1,7 @@
 #Common Information
 enviroment   = "dev"
 project		   = "miz"
-location     = "East US"
+location     = "West US"
 
 #Subscription
 subscriptions = {

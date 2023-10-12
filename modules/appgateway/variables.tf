@@ -1,5 +1,5 @@
 variable "vnet_name" {}
-variable "resourcegroup" {
+variable "resource_group" {
   description = "Resource group the fw will reside in"
 }
 variable "subnet_id" {}

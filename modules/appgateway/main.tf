@@ -6,16 +6,16 @@ locals {
 
 resource "azurerm_public_ip" "example" {
   name                = local.public_ip_name
-  resource_group_name = var.resourcegroup.name
-  location            = var.resourcegroup.location
+  resource_group_name = var.resource_group.name
+  location            = var.resource_group.location
   allocation_method   = "Dynamic"
 }
 
 resource "azurerm_application_gateway" "network" {
   depends_on          = [azurerm_public_ip.example]
   name                = "example-appgateway"
-  resource_group_name = var.resourcegroup.name
-  location            = var.resourcegroup.location
+  resource_group_name = var.resource_group.name
+  location            = var.resource_group.location
 
   sku {
     name     = "Standard_Small"
@@ -25,11 +25,11 @@ resource "azurerm_application_gateway" "network" {
 
   gateway_ip_configuration {
     name      = "my-gateway-ip-configuration"
-    subnet_id = var.subnet_id.[0].value
+    subnet_id = var.subnet_id.0.value
   }
 
   dynamic "frontend_port" {
-    for_each = appservice_host
+    for_each = var.appservice_host
     content {
       name = "${var.vnet_name}-${frontend_port.value.name}-feport"
       port = "808${frontend_port.key}"
@@ -42,7 +42,7 @@ resource "azurerm_application_gateway" "network" {
   }
 
   dynamic "backend_address_pool" {
-    for_each = appservice_host
+    for_each = var.appservice_host
     content {
       name  = "${var.vnet_name}-${backend_address_pool.value.name}-beap"
       fqdns = [backend_address_pool.value.default_site_hostname]
@@ -75,7 +75,7 @@ resource "azurerm_application_gateway" "network" {
   }
 
   dynamic "http_listener" {
-    for_each = appservice_host
+    for_each = var.appservice_host
     content {
       name                           = "${var.vnet_name}-${http_listener.value.name}-httplstn"
       frontend_ip_configuration_name = "${var.vnet_name}-feip"
@@ -85,7 +85,7 @@ resource "azurerm_application_gateway" "network" {
   }
 
   dynamic "request_routing_rule" {
-    for_each = appservice_host
+    for_each = var.appservice_host
     content {
       name                       = "${var.vnet_name}-${request_routing_rule.value.name}-rqrt"
       rule_type                  = "Basic"
